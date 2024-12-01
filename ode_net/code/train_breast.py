@@ -8,6 +8,9 @@ import numpy as np
 from tqdm import tqdm
 from math import ceil
 from time import perf_counter, process_time
+from extract_model_matrix_PHOENIX import extract_dynamics_matrix
+from get_percentiles import get_percentiles
+from validate_model import validate_model
 
 import torch
 import torch.optim as optim
@@ -21,8 +24,8 @@ except ImportError:
 from datahandler import DataHandler
 from odenet import ODENet
 from read_config import read_arguments_from_file
-from solve_eq import solve_eq
-from visualization_inte import *
+#from solve_eq import solve_eq
+from visualization import *
 
 #torch.set_num_threads(16) #CHANGE THIS!
 
@@ -107,7 +110,8 @@ def validation(odenet, data_handler, method, explicit_time):
     if method == "trajectory":
         False
 
-    init_bias_y = data_handler.init_bias_y
+    #init_bias_y = data_handler.init_bias_y
+    init_bias_y = 0
     #odenet.eval()
     with torch.no_grad():
         predictions = []
@@ -138,7 +142,8 @@ def validation(odenet, data_handler, method, explicit_time):
 def true_loss(odenet, data_handler, method):
     return [0,0]
     data, t, target = data_handler.get_true_mu_set() #tru_mu_prop = 1 (incorporate later)
-    init_bias_y = data_handler.init_bias_y
+    #init_bias_y = data_handler.init_bias_y
+    init_bias_y = 0
     #odenet.eval()
     with torch.no_grad():
         predictions = torch.zeros(data.shape).to(data_handler.device)
@@ -169,7 +174,8 @@ def training_step(odenet, data_handler, opt, method, batch_size, explicit_time, 
     target = target[not_nan_idx]
     '''
 
-    init_bias_y = data_handler.init_bias_y
+    #init_bias_y = data_handler.init_bias_y
+    init_bias_y = 0
     opt.zero_grad()
     predictions = torch.zeros(batch.shape).to(data_handler.device)
     for index, (time, batch_point) in enumerate(zip(t, batch)):
@@ -195,10 +201,10 @@ def save_model(odenet, folder, filename):
 
 parser = argparse.ArgumentParser('Testing')
 parser.add_argument('--settings', type=str, default='config_breast.cfg')
-clean_name =  "desmedt_500genes_1sample_178T" 
-parser.add_argument('--data', type=str, default='/home/ubuntu/neural_ODE/breast_cancer_data/clean_data/{}.csv'.format(clean_name))
-test_data_name = "desmedt_500genes_1TESTsample_8middleT" 
-parser.add_argument('--test_data', type=str, default='/home/ubuntu/neural_ODE/breast_cancer_data/clean_data/{}.csv'.format(test_data_name))
+clean_name =  "desmedt_11165genes_1sample_178T" 
+parser.add_argument('--data', type=str, default='../../breast_cancer_data/clean_data/{}.csv'.format(clean_name))
+test_data_name = "desmedt_11165enes_1TESTsample_8middleT" 
+parser.add_argument('--test_data', type=str, default='../../breast_cancer_data/clean_data/{}.csv'.format(test_data_name))
 
 args = parser.parse_args()
 
@@ -250,15 +256,12 @@ if __name__ == "__main__":
                                         batch_time_frac=settings['batch_time_frac'],
                                         noise = settings['noise'],
                                         img_save_dir = img_save_dir,
-                                        scale_expression = settings['scale_expression'],
-                                        log_scale = settings['log_scale'],
-                                        init_bias_y = settings['init_bias_y'],
-                                        fp_test = args.test_data)
+                                        scale_expression = settings['scale_expression'])
     
     abs_prior = True
     
     #Read in the prior matrix
-    prior_mat_loc = '/home/ubuntu/neural_ODE/breast_cancer_data/clean_data/edge_prior_matrix_desmedt_500.csv'
+    prior_mat_loc = '../../breast_cancer_data/clean_data/edge_prior_matrix_desmedt_11165.csv'
     prior_mat = read_prior_matrix(prior_mat_loc, sparse = False, num_genes = data_handler.dim)
     
     if abs_prior:
@@ -271,9 +274,9 @@ if __name__ == "__main__":
     del prior_mat
 
     #curriculum learning
-    loss_lambda_at_start =  1
-    loss_lambda_at_middle = 1
-    loss_lambda_at_end = 1
+    loss_lambda_at_start =  0.9
+    loss_lambda_at_middle = 0.9
+    loss_lambda_at_end = 0.9
 
     curriculum_epochs_1 = 7
     curriculum_epochs_2 = 20
@@ -281,15 +284,14 @@ if __name__ == "__main__":
     
     
     # Initialization
-    odenet = ODENet(device, data_handler.dim, explicit_time=settings['explicit_time'], neurons = settings['neurons_per_layer'], 
-                    log_scale = settings['log_scale'], init_bias_y = settings['init_bias_y'])
+    odenet = ODENet(device, data_handler.dim, explicit_time=settings['explicit_time'], neurons = settings['neurons_per_layer'])
     odenet.float()
     param_count = sum(p.numel() for p in odenet.parameters() if p.requires_grad)
     param_ratio = round(param_count/ (data_handler.dim)**2, 3)
     print("Using a NN with {} neurons per layer, with {} trainable parameters, i.e. parametrization ratio = {}".format(settings['neurons_per_layer'], param_count, param_ratio))
     
     if settings['pretrained_model']:
-        pretrained_model_file = '/home/ubuntu/neural_ODE/ode_net/code/output/_pretrained_best_model/best_val_model.pt'
+        pretrained_model_file = '../../ode_net/code/output/_pretrained_best_model/best_val_model.pt'
         odenet.load(pretrained_model_file)
         #print("Loaded in pre-trained model!")
         
@@ -456,10 +458,10 @@ if __name__ == "__main__":
         if settings['verbose']:
             pbar.close()
 
-        if settings['solve_A']:
-            A = solve_eq(odenet, settings['solve_eq_gridsize'], (-5, 5, 0, 10, -3, 3, -10, 10))
-            A_list.append(A)
-            print('A =\n{}'.format(A))
+        #if settings['solve_A']:
+        #    A = solve_eq(odenet, settings['solve_eq_gridsize'], (-5, 5, 0, 10, -3, 3, -10, 10))
+        #    A_list.append(A)
+        #    print('A =\n{}'.format(A))
 
         #handle true-mu loss
        
@@ -582,7 +584,17 @@ if __name__ == "__main__":
     print("Saving times")
     np.savetxt('{}epoch_times.csv'.format(output_root_dir), epoch_times, delimiter=',')
 
-        
+    print("Extracting dynamics matrix")
+    extract_dynamics_matrix(output_root_dir)
+
+    print("Obtaining percentiles from dynamics matrix")
+    get_percentiles(output_root_dir)
+
+    print("Comparing with validation network")
+    validation_network_path = '../../breast_cancer_data/clean_data/validation_network.csv'
+    genes_path = '../../breast_cancer_data/clean_data/desmedt_gene_names_11165.csv'
+    validate_model(output_root_dir, genes_path, validation_network_path)
+
     print("DONE!")
 
   
