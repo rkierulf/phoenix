@@ -48,7 +48,10 @@ def extract_dynamics_matrix(output_root_dir):
     prods_model = torch.load(prods_path)
     alpha_comb = torch.load(alpha_comb_path)
     gene_mult = torch.load(gene_mult_path)
+    extract_dynamics(output_root_dir, sums_model, prods_model, alpha_comb, gene_mult)
 
+def extract_dynamics(output_root_dir, sums_model, prods_model, alpha_comb, gene_mult):
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     Wo_sums = np.transpose(sums_model.linear_out.weight.detach().numpy())
     Bo_sums = np.transpose(sums_model.linear_out.bias.detach().numpy())
     Wo_prods = np.transpose(prods_model.linear_out.weight.detach().numpy())
