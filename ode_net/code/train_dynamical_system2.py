@@ -26,7 +26,7 @@ except ImportError:
 
 #from datagenerator import DataGenerator
 from datahandler import DataHandler
-from odenet import ODENet
+from odenet2 import ODENet2
 from read_config import read_arguments_from_file
 #from solve_eq import solve_eq
 from visualization import *
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     print('Loading settings from file {}'.format(settings_file_loc))
     settings = read_arguments_from_file(settings_file_loc)
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    odenet = ODENet(device, 5, False, settings['neurons_per_layer'])
+    odenet = ODENet2(device, 5, False, settings['neurons_per_layer'])
     odenet.float()
     param_count = sum(p.numel() for p in odenet.parameters() if p.requires_grad)
     param_ratio = round(param_count/ (5)**2, 3)
@@ -93,11 +93,11 @@ if __name__ == "__main__":
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', 
     factor=0.9, patience=6, threshold=1e-07, 
     threshold_mode='abs', cooldown=0, min_lr=0, eps=1e-09, verbose=True)
-    data_file_loc = "../../dynamical_system_data/variance_025_data.csv"
+    data_file_loc = "../../dynamical_system_data/variance_015_data.csv"
     train_data = read_data_csv(data_file_loc)
     train_time = np.arange(0, 11)
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(current_dir, "dynamical_system_output/variance_025")
+    output_path = os.path.join(current_dir, "dynamical_system_output/variance_015")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 

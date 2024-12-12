@@ -38,12 +38,18 @@ def make_mask(X):
 
 #From https://static-content.springer.com/esm/art%3A10.1186%2Fs13059-024-03264-0/MediaObjects/13059_2024_3264_MOESM2_ESM.pdf
 
-def extract_dynamics_matrix(output_root_dir):
+def extract_dynamics_matrix(output_root_dir, val=False):
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    sums_path = os.path.join(current_dir, output_root_dir, 'best_val_model_sums.pt')
-    prods_path = os.path.join(current_dir, output_root_dir, 'best_val_model_prods.pt')
-    alpha_comb_path = os.path.join(current_dir, output_root_dir, 'best_val_model_alpha_comb.pt')
-    gene_mult_path = os.path.join(current_dir, output_root_dir, 'best_val_model_gene_multipliers.pt')
+    if (val):
+        sums_path = os.path.join(current_dir, output_root_dir, 'final_model_sums.pt')
+        prods_path = os.path.join(current_dir, output_root_dir, 'final_model_prods.pt')
+        alpha_comb_path = os.path.join(current_dir, output_root_dir, 'final_model_alpha_comb.pt')
+        gene_mult_path = os.path.join(current_dir, output_root_dir, 'final_model_gene_multipliers.pt')
+    else:
+        sums_path = os.path.join(current_dir, output_root_dir, 'best_val_model_sums.pt')
+        prods_path = os.path.join(current_dir, output_root_dir, 'best_val_model_prods.pt')
+        alpha_comb_path = os.path.join(current_dir, output_root_dir, 'best_val_model_alpha_comb.pt')
+        gene_mult_path = os.path.join(current_dir, output_root_dir, 'best_val_model_gene_multipliers.pt')
     sums_model = torch.load(sums_path)
     prods_model = torch.load(prods_path)
     alpha_comb = torch.load(alpha_comb_path)
