@@ -93,11 +93,12 @@ class ODENet2(nn.Module):
         self.time_multipliers_prods_w1.to(device)
         
     def forward(self, t, y):
+        sig = nn.Sigmoid()
         delta_t = t - self.t_start
         sums = self.net_sums(y)
         prods = torch.exp(self.net_prods(y))
-        sums = sums * (torch.exp(self.time_multipliers_sums_w0 * delta_t + self.time_multipliers_sums_w1 * (delta_t ** 2)))
-        prods = prods * (torch.exp(self.time_multipliers_prods_w0 * delta_t + self.time_multipliers_prods_w1 * (delta_t ** 2)))
+        sums = sums * (sig(self.time_multipliers_sums_w0 * delta_t + self.time_multipliers_sums_w1 * (delta_t ** 2)))
+        prods = prods * (sig(self.time_multipliers_prods_w0 * delta_t + self.time_multipliers_prods_w1 * (delta_t ** 2)))
         sums_prods_concat = torch.cat((sums, prods), dim= - 1)
         joint = self.net_alpha_combine(sums_prods_concat)
         final = torch.relu(self.gene_multipliers)*(joint-y)

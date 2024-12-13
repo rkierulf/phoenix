@@ -93,11 +93,11 @@ if __name__ == "__main__":
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', 
     factor=0.9, patience=6, threshold=1e-07, 
     threshold_mode='abs', cooldown=0, min_lr=0, eps=1e-09, verbose=True)
-    data_file_loc = "../../dynamical_system_data/variance_015_data.csv"
+    data_file_loc = "../../dynamical_system_data/variance_005_data.csv"
     train_data = read_data_csv(data_file_loc)
     train_time = np.arange(0, 11)
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(current_dir, "dynamical_system_output/variance_015")
+    output_path = os.path.join(current_dir, "dynamical_system_output/variance_005")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
